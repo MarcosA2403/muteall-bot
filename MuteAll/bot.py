@@ -72,7 +72,7 @@ async def on_ready():
     # registrar botones persistentes
     bot.add_view(MuteAllPanel())
 
-    channel_id = 1495518779000492143
+    channel_id = 1493790351914438747
     channel = bot.get_channel(channel_id)
 
     if channel:
