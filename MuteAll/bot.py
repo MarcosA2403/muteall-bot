@@ -113,7 +113,7 @@ async def all_command(ctx: discord.ApplicationContext,
                       mentions: discord.Option(str, "mention user(s) or role(s)") = ""):
 
     await handle_errors(ctx, bot, do_all, mentions)
-await ctx.respond("<:mute:1487259209849638923> Todos muteados")
+    await ctx.respond("<:mute:1487259209849638923> Todos muteados")
     
 
 
@@ -130,7 +130,7 @@ async def unall(ctx: discord.ApplicationContext,
                 mentions: discord.Option(str, "mention user(s) or role(s)") = ""):
 
     await handle_errors(ctx, bot, do_unall, mentions)
-await ctx.respond("<:unmute:1487265179547996270> Todos desmuteados")
+    await ctx.respond("<:unmute:1487265179547996270> Todos desmuteados")
     
 
 
