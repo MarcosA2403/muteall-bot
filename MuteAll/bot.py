@@ -1,7 +1,5 @@
 import discord
 import os
-import asyncio
-from discord import FFmpegPCMAudio
 
 from MuteAll.core import (
     do_mute, do_unmute, do_deafen, do_undeafen,
@@ -15,31 +13,12 @@ from MuteAll.emojis import get_emojis
 bot = discord.AutoShardedBot()
 
 # =========================
-# 🔊 FUNCIÓN DE AUDIO
-# =========================
-async def play_sound(interaction, file):
-    if not interaction.user.voice:
-        return
-
-    channel = interaction.user.voice.channel
-
-    vc = await channel.connect()
-
-    vc.play(FFmpegPCMAudio(file))
-
-    while vc.is_playing():
-        await asyncio.sleep(1)
-
-    await vc.disconnect()
-
-
-# =========================
-# PANEL DE CONTROL
+# PANEL DE CONTROL FINAL
 # =========================
 class MuteAllPanel(discord.ui.View):
-    def __init__(self):
+    def __init__(self, enabled=True):
         super().__init__(timeout=None)
-        self.enabled = True
+        self.enabled = enabled
 
     def is_admin(self, interaction: discord.Interaction):
         return interaction.user.guild_permissions.administrator
@@ -87,6 +66,7 @@ def run():
 async def on_ready():
     await handle_ready(bot)
 
+    # registrar botones persistentes
     bot.add_view(MuteAllPanel())
 
     channel_id = 1493790351914438747
@@ -107,64 +87,123 @@ async def on_ready():
 # =========================
 # INFO COMMANDS
 # =========================
-@bot.slash_command(name="ping")
-async def ping(ctx):
+@bot.slash_command(name="ping", description="show latency of the bot")
+async def ping(ctx: discord.ApplicationContext):
     await ctx.respond(f"Pong! {round(bot.latency * 1000)} ms")
 
 
-@bot.slash_command(name="help")
-async def help_command(ctx):
-    await ctx.respond(embed=get_help())
+@bot.slash_command(name="help", description="get some help!")
+async def help_command(ctx: discord.ApplicationContext):
+    help_embed = get_help()
+    await ctx.respond(embed=help_embed)
 
 
-@bot.slash_command(name="stats")
-async def stats(ctx):
-    g, m = get_stats(bot)
-    await ctx.respond(f"MuteAll usado por `{m}` usuarios en `{g}` servidores!")
+@bot.slash_command(name="stats", description="show stats")
+async def stats(ctx: discord.ApplicationContext):
+    guilds, members = get_stats(bot)
+    await ctx.respond(
+        f"MuteAll is used by `{members}` users in `{guilds}` servers!"
+    )
 
 
 # =========================
 # MAIN COMMANDS
 # =========================
-@bot.slash_command(name="mute")
-async def mute(ctx, mentions: str = ""):
+@bot.slash_command(name="mute", description="server mute people!")
+async def mute(ctx: discord.ApplicationContext,
+               mentions: discord.Option(str, "") = ""):
     await handle_errors(ctx, bot, do_mute, mentions)
 
 
-@bot.slash_command(name="m")
-async def mute_short(ctx, mentions: str = ""):
+@bot.slash_command(name="m", description="server mute people!")
+async def mute_short(ctx: discord.ApplicationContext,
+                     mentions: discord.Option(str, "") = ""):
     await handle_errors(ctx, bot, do_mute, mentions)
 
 
-@bot.slash_command(name="unmute")
-async def unmute(ctx, mentions: str = ""):
+@bot.slash_command(name="unmute", description="unmute people!")
+async def unmute(ctx: discord.ApplicationContext,
+                 mentions: discord.Option(str, "") = ""):
     await handle_errors(ctx, bot, do_unmute, mentions)
 
 
-@bot.slash_command(name="u")
-async def unmute_short(ctx, mentions: str = ""):
+@bot.slash_command(name="u", description="unmute people!")
+async def unmute_short(ctx: discord.ApplicationContext,
+                       mentions: discord.Option(str, "") = ""):
     await handle_errors(ctx, bot, do_unmute, mentions)
 
 
-@bot.slash_command(name="deafen")
-async def deafen(ctx, mentions: str = ""):
+@bot.slash_command(name="um", description="unmute people!")
+async def unmute_short2(ctx: discord.ApplicationContext,
+                        mentions: discord.Option(str, "") = ""):
+    await handle_errors(ctx, bot, do_unmute, mentions)
+
+
+@bot.slash_command(name="deafen", description="deafen people!")
+async def deafen(ctx: discord.ApplicationContext,
+                 mentions: discord.Option(str, "") = ""):
     await handle_errors(ctx, bot, do_deafen, mentions)
 
 
-@bot.slash_command(name="undeafen")
-async def undeafen(ctx, mentions: str = ""):
+@bot.slash_command(name="d", description="deafen people!")
+async def deafen_short(ctx: discord.ApplicationContext,
+                       mentions: discord.Option(str, "") = ""):
+    await handle_errors(ctx, bot, do_deafen, mentions)
+
+
+@bot.slash_command(name="undeafen", description="undeafen people!")
+async def undeafen(ctx: discord.ApplicationContext,
+                   mentions: discord.Option(str, "") = ""):
     await handle_errors(ctx, bot, do_undeafen, mentions)
 
 
-@bot.slash_command(name="all")
-async def all_command(ctx, mentions: str = ""):
+@bot.slash_command(name="ud", description="undeafen people!")
+async def undeafen_short(ctx: discord.ApplicationContext,
+                         mentions: discord.Option(str, "") = ""):
+    await handle_errors(ctx, bot, do_undeafen, mentions)
+
+
+@bot.slash_command(name="all", description="mute and deafen people!")
+async def all_command(ctx: discord.ApplicationContext,
+                      mentions: discord.Option(str, "") = ""):
     await handle_errors(ctx, bot, do_all, mentions)
 
 
-@bot.slash_command(name="unall")
-async def unall(ctx, mentions: str = ""):
+@bot.slash_command(name="a", description="mute and deafen people!")
+async def all_short(ctx: discord.ApplicationContext,
+                    mentions: discord.Option(str, "") = ""):
+    await handle_errors(ctx, bot, do_all, mentions)
+
+
+@bot.slash_command(name="unall", description="unmute and undeafen people!")
+async def unall(ctx: discord.ApplicationContext,
+                mentions: discord.Option(str, "") = ""):
     await handle_errors(ctx, bot, do_unall, mentions)
 
+
+@bot.slash_command(name="ua", description="unmute and undeafen people!")
+async def unall_short(ctx: discord.ApplicationContext,
+                      mentions: discord.Option(str, "") = ""):
+    await handle_errors(ctx, bot, do_unall, mentions)
+
+
+# =========================
+# REACTIONS MODE
+# =========================
+@bot.slash_command(name="react", description="do everything using reactions!")
+async def react(ctx: discord.ApplicationContext):
+    try:
+        emojis = get_emojis(bot)
+        await add_reactions(ctx, emojis)
+
+        @bot.event
+        async def on_reaction_add(reaction: discord.Reaction, user: discord.User):
+            await handle_reaction(reaction, user, bot, ctx)
+
+    except discord.Forbidden:
+        return await show_permission_error(ctx)
+    except Exception as e:
+        return await show_common_error(ctx, bot, e)
 # DEPRECATED #################################################
 
 # # respond a help msg when the bot joins a server
