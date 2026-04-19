@@ -54,7 +54,8 @@ class MuteAllPanel(discord.ui.View):
             button.label = "🔇 Shut Up"
             button.style = discord.ButtonStyle.red
 
-        await interaction.response.edit_message(view=self)
+        # 🔥 FIX DEFINITIVO
+        await interaction.edit_original_response(view=self)
 
 
 # =========================
