@@ -16,8 +16,9 @@ bot = discord.AutoShardedBot()
 # PANEL DE CONTROL FINAL
 # =========================
 class MuteAllPanel(discord.ui.View):
-    def __init__(self):
+    def __init__(self, enabled=True):
         super().__init__(timeout=None)
+        self.enabled = enabled
 
     def is_admin(self, interaction: discord.Interaction):
         return interaction.user.guild_permissions.administrator
@@ -29,7 +30,6 @@ class MuteAllPanel(discord.ui.View):
     )
     async def toggle(self, button: discord.ui.Button, interaction: discord.Interaction):
 
-        # 🔒 solo admins
         if not self.is_admin(interaction):
             return await interaction.response.send_message(
                 "❌ Solo administradores",
@@ -38,11 +38,23 @@ class MuteAllPanel(discord.ui.View):
 
         ctx = await bot.get_application_context(interaction)
 
-        # 🔇 SIEMPRE MUTEA
-        await do_all(ctx, "")
+        if self.enabled:
+            # 🔇 MUTEAR
+            await do_all(ctx, "")
+            self.enabled = False
 
-        # ⚡ responder sin mensaje visible
-        await interaction.response.defer()
+            button.label = "🔊 Speak"
+            button.style = discord.ButtonStyle.green
+
+        else:
+            # 🔊 DESMUTEAR
+            await do_unall(ctx, "")
+            self.enabled = True
+
+            button.label = "🔇 Shut Up"
+            button.style = discord.ButtonStyle.red
+
+        await interaction.response.edit_message(view=self)
 
 
 # =========================
