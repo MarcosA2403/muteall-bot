@@ -45,40 +45,36 @@ class MuteAllPanel(discord.ui.View):
         return interaction.user.guild_permissions.administrator
 
     @discord.ui.button(
-        label="🔇 Shut Up",
-        style=discord.ButtonStyle.red,
-        custom_id="muteall_toggle"
-    )
-    async def toggle(self, button: discord.ui.Button, interaction: discord.Interaction):
+    label="🔇 Shut Up",
+    style=discord.ButtonStyle.red,
+    custom_id="muteall_toggle"
+)
+async def toggle(self, button: discord.ui.Button, interaction: discord.Interaction):
 
-        if not self.is_admin(interaction):
-            return await interaction.response.send_message(
-                "❌ Solo administradores",
-                ephemeral=True
-            )
+    if not interaction.user.guild_permissions.administrator:
+        return await interaction.response.send_message(
+            "❌ Solo administradores",
+            ephemeral=True
+        )
 
-        ctx = await bot.get_application_context(interaction)
+    ctx = await bot.get_application_context(interaction)
 
-        if self.enabled:
-            # 🔇 MUTEAR
-            await do_all(ctx, "")
-            await play_sound(interaction, "shutup.mp3")
+    # 🧠 detectar estado REAL por el texto
+    if "Shut Up" in button.label:
+        # 🔇 MUTEAR
+        await do_all(ctx, "")
 
-            self.enabled = False
-            button.label = "🔊 Speak"
-            button.style = discord.ButtonStyle.green
+        button.label = "🔊 Speak"
+        button.style = discord.ButtonStyle.green
 
-        else:
-            # 🔊 DESMUTEAR
-            await do_unall(ctx, "")
-            await play_sound(interaction, "speak.mp3")
+    else:
+        # 🔊 DESMUTEAR
+        await do_unall(ctx, "")
 
-            self.enabled = True
-            button.label = "🔇 Shut Up"
-            button.style = discord.ButtonStyle.red
+        button.label = "🔇 Shut Up"
+        button.style = discord.ButtonStyle.red
 
-        await interaction.edit_original_response(view=self)
-
+    await interaction.edit_original_response(view=self)
 
 # =========================
 # BOT START
