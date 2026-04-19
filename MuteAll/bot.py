@@ -31,10 +31,9 @@ class MuteAllPanel(discord.ui.View):
         mute_all_enabled = True
 
         try:
-            # 🔧 parche para compatibilidad con tu bot
-            interaction.author = interaction.user
+            ctx = await bot.get_application_context(interaction)
 
-            await do_all(interaction, "")
+            await do_all(ctx, "")
 
             await interaction.response.send_message(
                 "🟢 Todos muteados",
@@ -53,10 +52,9 @@ class MuteAllPanel(discord.ui.View):
         mute_all_enabled = False
 
         try:
-            # 🔧 mismo parche
-            interaction.author = interaction.user
+            ctx = await bot.get_application_context(interaction)
 
-            await do_unall(interaction, "")
+            await do_unall(ctx, "")
 
             await interaction.response.send_message(
                 "🔴 Todos desmuteados",
