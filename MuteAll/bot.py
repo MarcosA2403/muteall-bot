@@ -22,37 +22,51 @@ mute_all_enabled = True
 # PANEL DE CONTROL
 # =========================
 class MuteAllPanel(discord.ui.View):
-    def __init__(self):
+    def __init__(self, enabled=True):
         super().__init__(timeout=None)
+        self.enabled = enabled
 
-    @discord.ui.button(label="🟢 MuteAll ON", style=discord.ButtonStyle.green)
-    async def toggle(self, button: discord.ui.Button, interaction: discord.Interaction):
+        # Crear botón dinámico según estado
+        if self.enabled:
+            self.add_item(self.create_button_on())
+        else:
+            self.add_item(self.create_button_off())
 
-        try:
+    def create_button_on(self):
+        button = discord.ui.Button(
+            label="🟢 MuteAll ON",
+            style=discord.ButtonStyle.green
+        )
+
+        async def callback(interaction: discord.Interaction):
             ctx = await bot.get_application_context(interaction)
 
-            # Detectar estado por el texto del botón
-            if "ON" in button.label:
-                # 🔴 PASAR A OFF
-                await do_unall(ctx, "")
+            await do_unall(ctx, "")
 
-                button.label = "🔴 MuteAll OFF"
-                button.style = discord.ButtonStyle.red
+            # 🔄 recrear vista en OFF
+            new_view = MuteAllPanel(enabled=False)
+            await interaction.response.edit_message(view=new_view)
 
-            else:
-                # 🟢 PASAR A ON
-                await do_all(ctx, "")
+        button.callback = callback
+        return button
 
-                button.label = "🟢 MuteAll ON"
-                button.style = discord.ButtonStyle.green
+    def create_button_off(self):
+        button = discord.ui.Button(
+            label="🔴 MuteAll OFF",
+            style=discord.ButtonStyle.red
+        )
 
-            await interaction.response.edit_message(view=self)
+        async def callback(interaction: discord.Interaction):
+            ctx = await bot.get_application_context(interaction)
 
-        except Exception as e:
-            await interaction.response.send_message(
-                f"Error: {e}",
-                ephemeral=True
-            )
+            await do_all(ctx, "")
+
+            # 🔄 recrear vista en ON
+            new_view = MuteAllPanel(enabled=True)
+            await interaction.response.edit_message(view=new_view)
+
+        button.callback = callback
+        return button
 
 
 # =========================
@@ -66,11 +80,19 @@ def run():
 async def on_ready():
     await handle_ready(bot)
 
-    # 👉 PANEL AUTOMÁTICO (CAMBIA EL ID DEL CANAL)
-    channel_id = 1495518779000492143  # <-- CAMBIA ESTO
+    # ✅ registrar la view (importante para que el botón funcione siempre)
+    bot.add_view(MuteAllPanel())
+
+    # 👉 PANEL AUTOMÁTICO
+    channel_id = 1495518779000492143
     channel = bot.get_channel(channel_id)
 
     if channel:
+        # ⚠️ OPCIONAL: evita duplicar mensajes (simple)
+        async for msg in channel.history(limit=10):
+            if msg.author == bot.user and "Panel de control MuteAll" in msg.content:
+                return  # ya existe, no enviar otro
+
         await channel.send(
             "⚙️ Panel de control MuteAll",
             view=MuteAllPanel()
