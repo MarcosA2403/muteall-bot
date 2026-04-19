@@ -31,15 +31,15 @@ class MuteAllPanel(discord.ui.View):
         mute_all_enabled = True
 
         try:
-            # Ejecuta /all
-            await handle_errors(interaction, bot, do_all, "")
+            # Ejecuta directamente la función real
+            await do_all(interaction, "")
             await interaction.response.send_message(
-                "🟢 MuteAll ACTIVADO (todos muteados)",
+                "🟢 Todos muteados",
                 ephemeral=True
             )
         except Exception as e:
             await interaction.response.send_message(
-                f"Error: {e}",
+                f"Error al mutear: {e}",
                 ephemeral=True
             )
 
@@ -49,15 +49,15 @@ class MuteAllPanel(discord.ui.View):
         mute_all_enabled = False
 
         try:
-            # Ejecuta /unall
-            await handle_errors(interaction, bot, do_unall, "")
+            # Ejecuta directamente la función real
+            await do_unall(interaction, "")
             await interaction.response.send_message(
-                "🔴 MuteAll DESACTIVADO (todos desmuteados)",
+                "🔴 Todos desmuteados",
                 ephemeral=True
             )
         except Exception as e:
             await interaction.response.send_message(
-                f"Error: {e}",
+                f"Error al desmutear: {e}",
                 ephemeral=True
             )
 
