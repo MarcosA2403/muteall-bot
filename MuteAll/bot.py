@@ -29,17 +29,37 @@ class MuteAllPanel(discord.ui.View):
     async def enable(self, button, interaction: discord.Interaction):
         global mute_all_enabled
         mute_all_enabled = True
-        await interaction.response.send_message(
-            "🟢 MuteAll ACTIVADO", ephemeral=True
-        )
+
+        try:
+            # Ejecuta /all
+            await handle_errors(interaction, bot, do_all, "")
+            await interaction.response.send_message(
+                "🟢 MuteAll ACTIVADO (todos muteados)",
+                ephemeral=True
+            )
+        except Exception as e:
+            await interaction.response.send_message(
+                f"Error: {e}",
+                ephemeral=True
+            )
 
     @discord.ui.button(label="🔴 Desactivar MuteAll", style=discord.ButtonStyle.red)
     async def disable(self, button, interaction: discord.Interaction):
         global mute_all_enabled
         mute_all_enabled = False
-        await interaction.response.send_message(
-            "🔴 MuteAll DESACTIVADO", ephemeral=True
-        )
+
+        try:
+            # Ejecuta /unall
+            await handle_errors(interaction, bot, do_unall, "")
+            await interaction.response.send_message(
+                "🔴 MuteAll DESACTIVADO (todos desmuteados)",
+                ephemeral=True
+            )
+        except Exception as e:
+            await interaction.response.send_message(
+                f"Error: {e}",
+                ephemeral=True
+            )
 
 
 # =========================
