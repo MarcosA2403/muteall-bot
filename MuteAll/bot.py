@@ -24,46 +24,37 @@ mute_all_enabled = True
 class MuteAllPanel(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
+        self.enabled = True  # estado inicial
 
-    @discord.ui.button(label="🟢 Activar MuteAll", style=discord.ButtonStyle.green)
-    async def enable(self, button, interaction: discord.Interaction):
-        global mute_all_enabled
-        mute_all_enabled = True
-
-        try:
-            ctx = await bot.get_application_context(interaction)
-
-            await do_all(ctx, "")
-
-            await interaction.response.send_message(
-                "🟢 Todos muteados",
-                ephemeral=True
-            )
-
-        except Exception as e:
-            await interaction.response.send_message(
-                f"Error al mutear: {e}",
-                ephemeral=True
-            )
-
-    @discord.ui.button(label="🔴 Desactivar MuteAll", style=discord.ButtonStyle.red)
-    async def disable(self, button, interaction: discord.Interaction):
-        global mute_all_enabled
-        mute_all_enabled = False
+    @discord.ui.button(label="🟢 MuteAll ON", style=discord.ButtonStyle.green)
+    async def toggle(self, button: discord.ui.Button, interaction: discord.Interaction):
 
         try:
             ctx = await bot.get_application_context(interaction)
 
-            await do_unall(ctx, "")
+            if self.enabled:
+                # 🔴 PASAR A OFF
+                await do_unall(ctx, "")
+                self.enabled = False
 
-            await interaction.response.send_message(
-                "🔴 Todos desmuteados",
-                ephemeral=True
-            )
+                button.label = "🔴 MuteAll OFF"
+                button.style = discord.ButtonStyle.red
+
+                await interaction.response.edit_message(view=self)
+
+            else:
+                # 🟢 PASAR A ON
+                await do_all(ctx, "")
+                self.enabled = True
+
+                button.label = "🟢 MuteAll ON"
+                button.style = discord.ButtonStyle.green
+
+                await interaction.response.edit_message(view=self)
 
         except Exception as e:
             await interaction.response.send_message(
-                f"Error al desmutear: {e}",
+                f"Error: {e}",
                 ephemeral=True
             )
 
