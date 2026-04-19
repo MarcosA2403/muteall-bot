@@ -31,7 +31,8 @@ class MuteAllPanel(discord.ui.View):
     def button_on(self):
         button = discord.ui.Button(
             label="🟢 MuteAll ON",
-            style=discord.ButtonStyle.green
+            style=discord.ButtonStyle.green,
+            custom_id="muteall_on"  # 🔥 CLAVE
         )
 
         async def callback(interaction: discord.Interaction):
@@ -57,7 +58,8 @@ class MuteAllPanel(discord.ui.View):
     def button_off(self):
         button = discord.ui.Button(
             label="🔴 MuteAll OFF",
-            style=discord.ButtonStyle.red
+            style=discord.ButtonStyle.red,
+            custom_id="muteall_off"  # 🔥 CLAVE
         )
 
         async def callback(interaction: discord.Interaction):
