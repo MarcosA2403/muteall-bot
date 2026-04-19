@@ -23,8 +23,8 @@ class MuteAllPanel(discord.ui.View):
         return interaction.user.guild_permissions.administrator
 
     @discord.ui.button(
-        label="🟢 MuteAll ON",
-        style=discord.ButtonStyle.green,
+        label="🔇 Shut Up",
+        style=discord.ButtonStyle.red,
         custom_id="muteall_toggle"
     )
     async def toggle(self, button: discord.ui.Button, interaction: discord.Interaction):
@@ -38,23 +38,11 @@ class MuteAllPanel(discord.ui.View):
 
         ctx = await bot.get_application_context(interaction)
 
-        # 🧠 detectar estado por texto
-        if "ON" in button.label:
-            # 🟢 ON → MUTEAR
-            await do_all(ctx, "")
+        # 🔇 SIEMPRE MUTEA
+        await do_all(ctx, "")
 
-            button.label = "🔴 MuteAll OFF"
-            button.style = discord.ButtonStyle.red
-
-        else:
-            # 🔴 OFF → DESMUTEAR
-            await do_unall(ctx, "")
-
-            button.label = "🟢 MuteAll ON"
-            button.style = discord.ButtonStyle.green
-
-        await interaction.response.edit_message(view=self)
-        await interaction.followup.send("Shut Up")
+        # ⚡ responder sin mensaje visible
+        await interaction.response.defer()
 
 
 # =========================
