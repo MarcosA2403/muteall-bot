@@ -10,7 +10,7 @@ bot = discord.AutoShardedBot()
 
 
 def run():
-    bot.run(os.getenv("DISCORD_TOKEN"))
+    bot.run(os.getenv("DISCORD_TOKEN"), reconnect=True)
 
 
 @bot.event
