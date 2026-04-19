@@ -27,36 +27,34 @@ class MuteAllPanel(discord.ui.View):
         self.enabled = True  # estado inicial
 
     @discord.ui.button(label="🟢 MuteAll ON", style=discord.ButtonStyle.green)
-    async def toggle(self, button: discord.ui.Button, interaction: discord.Interaction):
+async def toggle(self, button: discord.ui.Button, interaction: discord.Interaction):
 
-        try:
-            ctx = await bot.get_application_context(interaction)
+    try:
+        ctx = await bot.get_application_context(interaction)
 
-            if self.enabled:
-                # 🔴 PASAR A OFF
-                await do_unall(ctx, "")
-                self.enabled = False
+        # 🔍 Detectar estado por el label actual
+        if "ON" in button.label:
+            # 🔴 PASAR A OFF
+            await do_unall(ctx, "")
 
-                button.label = "🔴 MuteAll OFF"
-                button.style = discord.ButtonStyle.red
+            button.label = "🔴 MuteAll OFF"
+            button.style = discord.ButtonStyle.red
 
-                await interaction.response.edit_message(view=self)
+        else:
+            # 🟢 PASAR A ON
+            await do_all(ctx, "")
 
-            else:
-                # 🟢 PASAR A ON
-                await do_all(ctx, "")
-                self.enabled = True
+            button.label = "🟢 MuteAll ON"
+            button.style = discord.ButtonStyle.green
 
-                button.label = "🟢 MuteAll ON"
-                button.style = discord.ButtonStyle.green
+        # 🔄 actualizar el botón
+        await interaction.response.edit_message(view=self)
 
-                await interaction.response.edit_message(view=self)
-
-        except Exception as e:
-            await interaction.response.send_message(
-                f"Error: {e}",
-                ephemeral=True
-            )
+    except Exception as e:
+        await interaction.response.send_message(
+            f"Error: {e}",
+            ephemeral=True
+        )
 
 
 # =========================
