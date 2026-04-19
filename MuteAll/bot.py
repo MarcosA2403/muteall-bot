@@ -31,12 +31,16 @@ class MuteAllPanel(discord.ui.View):
         mute_all_enabled = True
 
         try:
-            # Ejecuta directamente la función real
+            # 🔧 parche para compatibilidad con tu bot
+            interaction.author = interaction.user
+
             await do_all(interaction, "")
+
             await interaction.response.send_message(
                 "🟢 Todos muteados",
                 ephemeral=True
             )
+
         except Exception as e:
             await interaction.response.send_message(
                 f"Error al mutear: {e}",
@@ -49,12 +53,16 @@ class MuteAllPanel(discord.ui.View):
         mute_all_enabled = False
 
         try:
-            # Ejecuta directamente la función real
+            # 🔧 mismo parche
+            interaction.author = interaction.user
+
             await do_unall(interaction, "")
+
             await interaction.response.send_message(
                 "🔴 Todos desmuteados",
                 ephemeral=True
             )
+
         except Exception as e:
             await interaction.response.send_message(
                 f"Error al desmutear: {e}",
