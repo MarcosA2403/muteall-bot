@@ -97,7 +97,7 @@ async def do_all(ctx, mentions):
         members = get_affected_users(ctx, mentions)
 
     await do(task="all", members=members)
-    await ctx.respond("👍")
+    await ctx.respond("<:mute:1487259209849638923>")
 
 
 async def do_unall(ctx, mentions):
@@ -112,8 +112,7 @@ async def do_unall(ctx, mentions):
         members = get_affected_users(ctx, mentions)
 
     await do(task="unall", members=members)
-    await ctx.respond("👍")
-
+    await ctx.respond("<:unmute:1487265179547996270>")
 
 async def add_reactions(ctx, emojis):
 
