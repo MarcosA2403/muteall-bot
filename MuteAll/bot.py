@@ -1,5 +1,20 @@
 import discord
 import os
+import asyncio
+
+async def play_sound(interaction, file_path):
+    if not interaction.user.voice:
+        return None  # usuario no está en canal
+
+    channel = interaction.user.voice.channel
+    vc = await channel.connect()
+
+    vc.play(discord.FFmpegPCMAudio(file_path))
+
+    while vc.is_playing():
+        await asyncio.sleep(1)
+
+    await vc.disconnect()
 
 from MuteAll.core import (
     do_mute, do_unmute, do_deafen, do_undeafen,
@@ -19,6 +34,9 @@ class MuteAllPanel(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
+    def is_admin(self, interaction: discord.Interaction):
+        return interaction.user.guild_permissions.administrator
+
     @discord.ui.button(
         label="🔇 Shut Up",
         style=discord.ButtonStyle.red,
@@ -26,20 +44,31 @@ class MuteAllPanel(discord.ui.View):
     )
     async def toggle(self, button: discord.ui.Button, interaction: discord.Interaction):
 
-        if not interaction.user.guild_permissions.administrator:
+        if not self.is_admin(interaction):
             return await interaction.response.send_message(
                 "❌ Solo administradores",
                 ephemeral=True
             )
 
+        await interaction.response.defer()  # 🔥 importante
+
         ctx = await bot.get_application_context(interaction)
 
+        # 🔇 MUTEAR
         if "Shut Up" in button.label:
+            await play_sound(interaction, "sounds/shutup.mp3")
+
             await do_all(ctx, "")
+
             button.label = "🔊 Speak"
             button.style = discord.ButtonStyle.green
+
+        # 🔊 DESMUTEAR
         else:
+            await play_sound(interaction, "sounds/speak.mp3")
+
             await do_unall(ctx, "")
+
             button.label = "🔇 Shut Up"
             button.style = discord.ButtonStyle.red
 
