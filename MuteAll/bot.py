@@ -4,10 +4,22 @@ import asyncio
 
 async def play_sound(interaction, file_path):
     if not interaction.user.voice:
-        return None  # usuario no está en canal
+        return
 
     channel = interaction.user.voice.channel
-    vc = await channel.connect()
+
+    vc = interaction.guild.voice_client
+
+    # 🔥 SI YA ESTÁ CONECTADO
+    if vc:
+        if vc.channel != channel:
+            await vc.move_to(channel)
+    else:
+        vc = await channel.connect()
+
+    # 🔥 detener audio anterior si existe
+    if vc.is_playing():
+        vc.stop()
 
     vc.play(discord.FFmpegPCMAudio(file_path))
 
