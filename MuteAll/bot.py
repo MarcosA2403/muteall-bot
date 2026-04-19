@@ -16,71 +16,45 @@ bot = discord.AutoShardedBot()
 # PANEL DE CONTROL FINAL
 # =========================
 class MuteAllPanel(discord.ui.View):
-    def __init__(self, enabled=True):
+    def __init__(self):
         super().__init__(timeout=None)
-        self.enabled = enabled
-
-        if self.enabled:
-            self.add_item(self.button_on())
-        else:
-            self.add_item(self.button_off())
 
     def is_admin(self, interaction: discord.Interaction):
         return interaction.user.guild_permissions.administrator
 
-    def button_on(self):
-        button = discord.ui.Button(
-            label="🟢 MuteAll ON",
-            style=discord.ButtonStyle.green,
-            custom_id="muteall_on"  # 🔥 CLAVE
-        )
+    @discord.ui.button(
+        label="🟢 MuteAll ON",
+        style=discord.ButtonStyle.green,
+        custom_id="muteall_toggle"
+    )
+    async def toggle(self, button: discord.ui.Button, interaction: discord.Interaction):
 
-        async def callback(interaction: discord.Interaction):
-            if not self.is_admin(interaction):
-                return await interaction.response.send_message(
-                    "❌ Solo administradores",
-                    ephemeral=True
-                )
-
-            ctx = await bot.get_application_context(interaction)
-
-            await do_unall(ctx, "")
-
-            await interaction.response.edit_message(
-                view=MuteAllPanel(enabled=False)
+        # 🔒 solo admins
+        if not self.is_admin(interaction):
+            return await interaction.response.send_message(
+                "❌ Solo administradores",
+                ephemeral=True
             )
 
-            await interaction.followup.send("Shut Up")
+        ctx = await bot.get_application_context(interaction)
 
-        button.callback = callback
-        return button
-
-    def button_off(self):
-        button = discord.ui.Button(
-            label="🔴 MuteAll OFF",
-            style=discord.ButtonStyle.red,
-            custom_id="muteall_off"  # 🔥 CLAVE
-        )
-
-        async def callback(interaction: discord.Interaction):
-            if not self.is_admin(interaction):
-                return await interaction.response.send_message(
-                    "❌ Solo administradores",
-                    ephemeral=True
-                )
-
-            ctx = await bot.get_application_context(interaction)
-
+        # 🧠 detectar estado por texto
+        if "ON" in button.label:
+            # 🟢 ON → MUTEAR
             await do_all(ctx, "")
 
-            await interaction.response.edit_message(
-                view=MuteAllPanel(enabled=True)
-            )
+            button.label = "🔴 MuteAll OFF"
+            button.style = discord.ButtonStyle.red
 
-            await interaction.followup.send("Shut Up")
+        else:
+            # 🔴 OFF → DESMUTEAR
+            await do_unall(ctx, "")
 
-        button.callback = callback
-        return button
+            button.label = "🟢 MuteAll ON"
+            button.style = discord.ButtonStyle.green
+
+        await interaction.response.edit_message(view=self)
+        await interaction.followup.send("Shut Up")
 
 
 # =========================
