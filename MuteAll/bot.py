@@ -12,9 +12,8 @@ from MuteAll.emojis import get_emojis
 
 bot = discord.AutoShardedBot()
 
-
 # =========================
-# PANEL
+# PANEL DE CONTROL FINAL
 # =========================
 class MuteAllPanel(discord.ui.View):
     def __init__(self, enabled=True):
@@ -37,29 +36,26 @@ class MuteAllPanel(discord.ui.View):
                 ephemeral=True
             )
 
-        await interaction.response.defer()
-
         ctx = await bot.get_application_context(interaction)
 
-        try:
-            if self.enabled:
-                await do_all(ctx, "")  # 🔥 mute a TODOS
-                self.enabled = False
+        if self.enabled:
+            # 🔇 MUTEAR
+            await do_all(ctx, "")
+            self.enabled = False
 
-                button.label = "🔊 Speak"
-                button.style = discord.ButtonStyle.green
+            button.label = "🔊 Speak"
+            button.style = discord.ButtonStyle.green
 
-            else:
-                await do_unall(ctx, "")  # 🔥 unmute a TODOS
-                self.enabled = True
+        else:
+            # 🔊 DESMUTEAR
+            await do_unall(ctx, "")
+            self.enabled = True
 
-                button.label = "🔇 Shut Up"
-                button.style = discord.ButtonStyle.red
+            button.label = "🔇 Shut Up"
+            button.style = discord.ButtonStyle.red
 
-            await interaction.edit_original_response(view=self)
-
-        except Exception as e:
-            print("Error botón:", e)
+        # 🔥 FIX DEFINITIVO
+        await interaction.edit_original_response(view=self)
 
 
 # =========================
@@ -73,12 +69,18 @@ def run():
 async def on_ready():
     await handle_ready(bot)
 
+    # registrar botones persistentes
     bot.add_view(MuteAllPanel())
 
     channel_id = 1493790351914438747
     channel = bot.get_channel(channel_id)
 
     if channel:
+        async for msg in channel.history(limit=20):
+            if msg.author == bot.user and "Panel de control MuteAll" in msg.content:
+                await msg.edit(view=MuteAllPanel())
+                return
+
         await channel.send(
             "⚙️ Panel de control MuteAll",
             view=MuteAllPanel()
@@ -170,14 +172,26 @@ async def all_command(ctx: discord.ApplicationContext,
     await handle_errors(ctx, bot, do_all, mentions)
 
 
+@bot.slash_command(name="a", description="mute and deafen people!")
+async def all_short(ctx: discord.ApplicationContext,
+                    mentions: discord.Option(str, "") = ""):
+    await handle_errors(ctx, bot, do_all, mentions)
+
+
 @bot.slash_command(name="unall", description="unmute and undeafen people!")
 async def unall(ctx: discord.ApplicationContext,
                 mentions: discord.Option(str, "") = ""):
     await handle_errors(ctx, bot, do_unall, mentions)
 
 
+@bot.slash_command(name="ua", description="unmute and undeafen people!")
+async def unall_short(ctx: discord.ApplicationContext,
+                      mentions: discord.Option(str, "") = ""):
+    await handle_errors(ctx, bot, do_unall, mentions)
+
+
 # =========================
-# REACT MODE
+# REACTIONS MODE
 # =========================
 @bot.slash_command(name="react", description="do everything using reactions!")
 async def react(ctx: discord.ApplicationContext):
