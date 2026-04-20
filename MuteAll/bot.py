@@ -12,6 +12,7 @@ from MuteAll.emojis import get_emojis
 
 bot = discord.AutoShardedBot()
 
+
 # =========================
 # PANEL DE CONTROL FINAL
 # =========================
@@ -36,25 +37,27 @@ class MuteAllPanel(discord.ui.View):
                 ephemeral=True
             )
 
-        ctx = await bot.get_application_context(interaction)
+        guild = interaction.guild  # 🔥 CLAVE: usar el servidor
+
+        # 🔥 IMPORTANTE: responder primero para evitar timeout
+        await interaction.response.defer()
 
         if self.enabled:
-            # 🔇 MUTEAR
-            await do_all(ctx, "")
+            # 🔇 MUTEAR A TODOS
+            await do_all(guild)
             self.enabled = False
 
             button.label = "🔊 Speak"
             button.style = discord.ButtonStyle.green
 
         else:
-            # 🔊 DESMUTEAR
-            await do_unall(ctx, "")
+            # 🔊 DESMUTEAR A TODOS
+            await do_unall(guild)
             self.enabled = True
 
             button.label = "🔇 Shut Up"
             button.style = discord.ButtonStyle.red
 
-        # 🔥 FIX DEFINITIVO
         await interaction.edit_original_response(view=self)
 
 
@@ -69,18 +72,12 @@ def run():
 async def on_ready():
     await handle_ready(bot)
 
-    # registrar botones persistentes
     bot.add_view(MuteAllPanel())
 
     channel_id = 1493790351914438747
     channel = bot.get_channel(channel_id)
 
     if channel:
-        async for msg in channel.history(limit=20):
-            if msg.author == bot.user and "Panel de control MuteAll" in msg.content:
-                await msg.edit(view=MuteAllPanel())
-                return
-
         await channel.send(
             "⚙️ Panel de control MuteAll",
             view=MuteAllPanel()
