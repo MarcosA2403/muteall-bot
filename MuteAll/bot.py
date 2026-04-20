@@ -15,23 +15,30 @@ async def play_sound(interaction, file_path):
         return
 
     channel = interaction.user.voice.channel
-    vc = interaction.guild.voice_client
+    vc = discord.utils.get(bot.voice_clients, guild=interaction.guild)
 
-    if vc:
-        if vc.channel != channel:
-            await vc.move_to(channel)
-    else:
-        vc = await channel.connect()
+    try:
+        if vc and vc.is_connected():
+            if vc.channel != channel:
+                await vc.move_to(channel)
+        else:
+            vc = await channel.connect()
 
-    if vc.is_playing():
-        vc.stop()
+        if vc.is_playing():
+            vc.stop()
 
-    vc.play(discord.FFmpegPCMAudio(file_path))
+        source = discord.FFmpegPCMAudio(file_path)
+        vc.play(source)
 
-    while vc.is_playing():
-        await asyncio.sleep(0.5)
+        while vc.is_playing():
+            await asyncio.sleep(0.5)
 
-    await vc.disconnect()
+    except Exception as e:
+        print("Audio error:", e)
+
+    finally:
+        if vc and vc.is_connected():
+            await vc.disconnect()
 
 
 # =========================
