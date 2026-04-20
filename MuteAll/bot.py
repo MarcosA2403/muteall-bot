@@ -1,6 +1,8 @@
 import discord
 import os
 import asyncio
+import time
+import sys
 
 from MuteAll.core import (
     do_mute, do_unmute, do_deafen, do_undeafen,
@@ -14,7 +16,23 @@ from MuteAll.emojis import get_emojis
 bot = discord.AutoShardedBot()
 
 # =========================
-# PANEL DE CONTROL FINAL
+# PROTECCIÓN GLOBAL
+# =========================
+@bot.event
+async def on_error(event, *args, **kwargs):
+    print(f"⚠️ Error en evento {event}:", sys.exc_info())
+
+@bot.event
+async def on_application_command_error(ctx, error):
+    print("❌ Error comando:", error)
+    try:
+        await ctx.respond("⚠️ Ocurrió un error", ephemeral=True)
+    except:
+        pass
+
+
+# =========================
+# PANEL DE CONTROL
 # =========================
 class MuteAllPanel(discord.ui.View):
     def __init__(self, enabled=True):
@@ -37,7 +55,6 @@ class MuteAllPanel(discord.ui.View):
                 ephemeral=True
             )
 
-        # evitar error de interacción
         await interaction.response.defer()
 
         ctx = await bot.get_application_context(interaction)
@@ -58,18 +75,28 @@ class MuteAllPanel(discord.ui.View):
                 button.style = discord.ButtonStyle.red
 
         except Exception as e:
-            print("Error en botón:", e)
+            print("🔥 Error en botón:", e)
 
         await interaction.edit_original_response(view=self)
 
 
 # =========================
-# BOT START
+# BOT START (MODO INMORTAL)
 # =========================
 def run():
-    bot.run(os.getenv("DISCORD_TOKEN"), reconnect=True)
+    while True:
+        try:
+            print("🔥 Iniciando bot...")
+            bot.run(os.getenv("DISCORD_TOKEN"), reconnect=True)
+        except Exception as e:
+            print("💥 Bot crasheó:", e)
+            print("🔁 Reiniciando en 5 segundos...")
+            time.sleep(5)
 
 
+# =========================
+# READY
+# =========================
 @bot.event
 async def on_ready():
     await handle_ready(bot)
