@@ -1,5 +1,6 @@
 import discord
 import os
+import asyncio
 
 from MuteAll.core import (
     do_mute, do_unmute, do_deafen, do_undeafen,
@@ -36,18 +37,26 @@ class MuteAllPanel(discord.ui.View):
                 ephemeral=True
             )
 
-        # 🔥 evita error "Unknown interaction"
+        # 🔥 evitar error de interacción
         await interaction.response.defer()
 
         ctx = await bot.get_application_context(interaction)
 
         try:
+            # 🔥 limpiar reacciones anteriores
+            try:
+                await interaction.message.clear_reactions()
+            except:
+                pass
+
             if self.enabled:
                 await do_all(ctx, "")
                 self.enabled = False
 
                 button.label = "🔊 Speak"
                 button.style = discord.ButtonStyle.green
+
+                emoji = "🔇"
             else:
                 await do_unall(ctx, "")
                 self.enabled = True
@@ -55,10 +64,24 @@ class MuteAllPanel(discord.ui.View):
                 button.label = "🔇 Shut Up"
                 button.style = discord.ButtonStyle.red
 
+                emoji = "🔊"
+
+            # 🔥 añadir reacción
+            await interaction.message.add_reaction(emoji)
+
+            # 🔥 log opcional (quién lo presionó)
+            print(f"{interaction.user} presionó el botón -> {emoji}")
+
+            # 🔥 quitar reacción después de 3 segundos
+            await asyncio.sleep(3)
+            try:
+                await interaction.message.clear_reactions()
+            except:
+                pass
+
         except Exception as e:
             print("Error en botón:", e)
 
-        # 🔥 SIEMPRE usa followup después de defer
         await interaction.edit_original_response(view=self)
 
 
@@ -112,7 +135,7 @@ async def stats(ctx: discord.ApplicationContext):
 
 
 # =========================
-# MAIN COMMANDS (FIX IMPORTANTE)
+# MAIN COMMANDS
 # =========================
 @bot.slash_command(name="mute")
 async def mute(ctx: discord.ApplicationContext, mentions: discord.Option(str, "") = ""):
