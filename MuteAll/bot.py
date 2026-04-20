@@ -37,18 +37,12 @@ class MuteAllPanel(discord.ui.View):
                 ephemeral=True
             )
 
-        # 🔥 evitar error de interacción
+        # evitar error de interacción
         await interaction.response.defer()
 
         ctx = await bot.get_application_context(interaction)
 
         try:
-            # 🔥 limpiar reacciones anteriores
-            try:
-                await interaction.message.clear_reactions()
-            except:
-                pass
-
             if self.enabled:
                 await do_all(ctx, "")
                 self.enabled = False
@@ -56,28 +50,12 @@ class MuteAllPanel(discord.ui.View):
                 button.label = "🔊 Speak"
                 button.style = discord.ButtonStyle.green
 
-                emoji = "🔇"
             else:
                 await do_unall(ctx, "")
                 self.enabled = True
 
                 button.label = "🔇 Shut Up"
                 button.style = discord.ButtonStyle.red
-
-                emoji = "🔊"
-
-            # 🔥 añadir reacción
-            await interaction.message.add_reaction(emoji)
-
-            # 🔥 log opcional (quién lo presionó)
-            print(f"{interaction.user} presionó el botón -> {emoji}")
-
-            # 🔥 quitar reacción después de 3 segundos
-            await asyncio.sleep(3)
-            try:
-                await interaction.message.clear_reactions()
-            except:
-                pass
 
         except Exception as e:
             print("Error en botón:", e)
