@@ -37,22 +37,20 @@ class MuteAllPanel(discord.ui.View):
                 ephemeral=True
             )
 
-        guild = interaction.guild  # 🔥 CLAVE: usar el servidor
+        # 🔥 IMPORTANTE: usa ctx, NO guild
+        ctx = await bot.get_application_context(interaction)
 
-        # 🔥 IMPORTANTE: responder primero para evitar timeout
         await interaction.response.defer()
 
         if self.enabled:
-            # 🔇 MUTEAR A TODOS
-            await do_all(guild)
+            await do_all(ctx, "")   # ✅ CORRECTO
             self.enabled = False
 
             button.label = "🔊 Speak"
             button.style = discord.ButtonStyle.green
 
         else:
-            # 🔊 DESMUTEAR A TODOS
-            await do_unall(guild)
+            await do_unall(ctx, "")  # ✅ CORRECTO
             self.enabled = True
 
             button.label = "🔇 Shut Up"
@@ -83,6 +81,10 @@ async def on_ready():
             view=MuteAllPanel()
         )
 
+
+# =========================
+# (TODO LO DEMÁS IGUAL)
+# =========================
 
 # =========================
 # INFO COMMANDS
