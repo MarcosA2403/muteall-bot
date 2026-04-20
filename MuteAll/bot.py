@@ -14,7 +14,7 @@ bot = discord.AutoShardedBot()
 
 
 # =========================
-# PANEL DE CONTROL FINAL
+# PANEL DE CONTROL
 # =========================
 class MuteAllPanel(discord.ui.View):
     def __init__(self, enabled=True):
@@ -37,26 +37,32 @@ class MuteAllPanel(discord.ui.View):
                 ephemeral=True
             )
 
-        # 🔥 IMPORTANTE: usa ctx, NO guild
+        # ⚠️ IMPORTANTE: usar ApplicationContext correcto
         ctx = await bot.get_application_context(interaction)
 
         await interaction.response.defer()
 
-        if self.enabled:
-            await do_all(ctx, "")   # ✅ CORRECTO
-            self.enabled = False
+        try:
+            if self.enabled:
+                # 🔇 MUTEAR A TODOS
+                await do_all(ctx, "")   # 👈 IMPORTANTE: ctx + mentions vacío
+                self.enabled = False
 
-            button.label = "🔊 Speak"
-            button.style = discord.ButtonStyle.green
+                button.label = "🔊 Speak"
+                button.style = discord.ButtonStyle.green
 
-        else:
-            await do_unall(ctx, "")  # ✅ CORRECTO
-            self.enabled = True
+            else:
+                # 🔊 DESMUTEAR A TODOS
+                await do_unall(ctx, "")  # 👈 IGUAL AQUÍ
+                self.enabled = True
 
-            button.label = "🔇 Shut Up"
-            button.style = discord.ButtonStyle.red
+                button.label = "🔇 Shut Up"
+                button.style = discord.ButtonStyle.red
 
-        await interaction.edit_original_response(view=self)
+            await interaction.edit_original_response(view=self)
+
+        except Exception as e:
+            print("Error en botón:", e)
 
 
 # =========================
@@ -81,6 +87,20 @@ async def on_ready():
             view=MuteAllPanel()
         )
 
+
+# =========================
+# COMMANDS (/all y /unall)
+# =========================
+@bot.slash_command(name="all", description="mute and deafen people!")
+async def all_command(ctx: discord.ApplicationContext,
+                      mentions: discord.Option(str, "") = ""):
+    await handle_errors(ctx, bot, do_all, mentions)
+
+
+@bot.slash_command(name="unall", description="unmute and undeafen people!")
+async def unall(ctx: discord.ApplicationContext,
+                mentions: discord.Option(str, "") = ""):
+    await handle_errors(ctx, bot, do_unall, mentions)
 
 # =========================
 # (TODO LO DEMÁS IGUAL)
