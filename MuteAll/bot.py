@@ -1,55 +1,26 @@
 import discord
 import os
-import asyncio
 
-from MuteAll.core import do_all, do_unall
-from MuteAll.events import handle_ready
+from MuteAll.core import (
+    do_mute, do_unmute, do_deafen, do_undeafen,
+    do_all, do_unall, add_reactions
+)
+from MuteAll.errors import show_common_error, show_permission_error
+from MuteAll.events import handle_ready, handle_reaction
+from MuteAll.utils import get_help, get_stats, handle_errors
+from MuteAll.emojis import get_emojis
 
 bot = discord.AutoShardedBot()
 
 # =========================
-# AUDIO
-# =========================
-async def play_sound(interaction, file_path):
-    if not interaction.user.voice:
-        return
-
-    channel = interaction.user.voice.channel
-    vc = discord.utils.get(bot.voice_clients, guild=interaction.guild)
-
-    try:
-        if vc and vc.is_connected():
-            if vc.channel != channel:
-                await vc.move_to(channel)
-        else:
-            vc = await channel.connect()
-
-        if vc.is_playing():
-            vc.stop()
-
-        source = discord.FFmpegPCMAudio(file_path)
-        vc.play(source)
-
-        while vc.is_playing():
-            await asyncio.sleep(0.5)
-
-    except Exception as e:
-        print("Audio error:", e)
-
-    finally:
-        if vc and vc.is_connected():
-            await vc.disconnect()
-
-
-# =========================
-# PANEL
+# PANEL DE CONTROL FINAL
 # =========================
 class MuteAllPanel(discord.ui.View):
-    def __init__(self):
+    def __init__(self, enabled=True):
         super().__init__(timeout=None)
-        self.enabled = True
+        self.enabled = enabled
 
-    def is_admin(self, interaction):
+    def is_admin(self, interaction: discord.Interaction):
         return interaction.user.guild_permissions.administrator
 
     @discord.ui.button(
@@ -65,48 +36,55 @@ class MuteAllPanel(discord.ui.View):
                 ephemeral=True
             )
 
-        await interaction.response.defer()
-
         ctx = await bot.get_application_context(interaction)
 
         if self.enabled:
-            await play_sound(interaction, "sounds/shutup.mp3")
+            # 🔇 MUTEAR
             await do_all(ctx, "")
-
             self.enabled = False
+
             button.label = "🔊 Speak"
             button.style = discord.ButtonStyle.green
 
         else:
-            await play_sound(interaction, "sounds/speak.mp3")
+            # 🔊 DESMUTEAR
             await do_unall(ctx, "")
-
             self.enabled = True
+
             button.label = "🔇 Shut Up"
             button.style = discord.ButtonStyle.red
 
+        # 🔥 FIX DEFINITIVO
         await interaction.edit_original_response(view=self)
 
 
 # =========================
 # BOT START
 # =========================
+def run():
+    bot.run(os.getenv("DISCORD_TOKEN"), reconnect=True)
+
+
 @bot.event
 async def on_ready():
     await handle_ready(bot)
+
+    # registrar botones persistentes
     bot.add_view(MuteAllPanel())
 
-    channel = bot.get_channel(1493790351914438747)
+    channel_id = 1493790351914438747
+    channel = bot.get_channel(channel_id)
 
     if channel:
+        async for msg in channel.history(limit=20):
+            if msg.author == bot.user and "Panel de control MuteAll" in msg.content:
+                await msg.edit(view=MuteAllPanel())
+                return
+
         await channel.send(
             "⚙️ Panel de control MuteAll",
             view=MuteAllPanel()
         )
-
-
-def run():
-    bot.run(os.getenv("DISCORD_TOKEN"))
 
 
 # =========================
@@ -117,14 +95,19 @@ async def ping(ctx: discord.ApplicationContext):
     await ctx.respond(f"Pong! {round(bot.latency * 1000)} ms")
 
 
-# =========================
-# ERROR HANDLING FIX NOTICE
-# =========================
-# ⚠️ IMPORTANTE:
-# El fix real de este error:
-# "Target user is not connected to voice"
-# NO va aquí.
-# Debe ir en MuteAll/core.py dentro de cada función.
+@bot.slash_command(name="help", description="get some help!")
+async def help_command(ctx: discord.ApplicationContext):
+    help_embed = get_help()
+    await ctx.respond(embed=help_embed)
+
+
+@bot.slash_command(name="stats", description="show stats")
+async def stats(ctx: discord.ApplicationContext):
+    guilds, members = get_stats(bot)
+    await ctx.respond(
+        f"MuteAll is used by `{members}` users in `{guilds}` servers!"
+    )
+
 
 # =========================
 # MAIN COMMANDS
@@ -135,9 +118,27 @@ async def mute(ctx: discord.ApplicationContext,
     await handle_errors(ctx, bot, do_mute, mentions)
 
 
+@bot.slash_command(name="m", description="server mute people!")
+async def mute_short(ctx: discord.ApplicationContext,
+                     mentions: discord.Option(str, "") = ""):
+    await handle_errors(ctx, bot, do_mute, mentions)
+
+
 @bot.slash_command(name="unmute", description="unmute people!")
 async def unmute(ctx: discord.ApplicationContext,
                  mentions: discord.Option(str, "") = ""):
+    await handle_errors(ctx, bot, do_unmute, mentions)
+
+
+@bot.slash_command(name="u", description="unmute people!")
+async def unmute_short(ctx: discord.ApplicationContext,
+                       mentions: discord.Option(str, "") = ""):
+    await handle_errors(ctx, bot, do_unmute, mentions)
+
+
+@bot.slash_command(name="um", description="unmute people!")
+async def unmute_short2(ctx: discord.ApplicationContext,
+                        mentions: discord.Option(str, "") = ""):
     await handle_errors(ctx, bot, do_unmute, mentions)
 
 
@@ -147,9 +148,21 @@ async def deafen(ctx: discord.ApplicationContext,
     await handle_errors(ctx, bot, do_deafen, mentions)
 
 
+@bot.slash_command(name="d", description="deafen people!")
+async def deafen_short(ctx: discord.ApplicationContext,
+                       mentions: discord.Option(str, "") = ""):
+    await handle_errors(ctx, bot, do_deafen, mentions)
+
+
 @bot.slash_command(name="undeafen", description="undeafen people!")
 async def undeafen(ctx: discord.ApplicationContext,
                    mentions: discord.Option(str, "") = ""):
+    await handle_errors(ctx, bot, do_undeafen, mentions)
+
+
+@bot.slash_command(name="ud", description="undeafen people!")
+async def undeafen_short(ctx: discord.ApplicationContext,
+                         mentions: discord.Option(str, "") = ""):
     await handle_errors(ctx, bot, do_undeafen, mentions)
 
 
@@ -159,10 +172,41 @@ async def all_command(ctx: discord.ApplicationContext,
     await handle_errors(ctx, bot, do_all, mentions)
 
 
+@bot.slash_command(name="a", description="mute and deafen people!")
+async def all_short(ctx: discord.ApplicationContext,
+                    mentions: discord.Option(str, "") = ""):
+    await handle_errors(ctx, bot, do_all, mentions)
+
+
 @bot.slash_command(name="unall", description="unmute and undeafen people!")
 async def unall(ctx: discord.ApplicationContext,
                 mentions: discord.Option(str, "") = ""):
     await handle_errors(ctx, bot, do_unall, mentions)
+
+
+@bot.slash_command(name="ua", description="unmute and undeafen people!")
+async def unall_short(ctx: discord.ApplicationContext,
+                      mentions: discord.Option(str, "") = ""):
+    await handle_errors(ctx, bot, do_unall, mentions)
+
+
+# =========================
+# REACTIONS MODE
+# =========================
+@bot.slash_command(name="react", description="do everything using reactions!")
+async def react(ctx: discord.ApplicationContext):
+    try:
+        emojis = get_emojis(bot)
+        await add_reactions(ctx, emojis)
+
+        @bot.event
+        async def on_reaction_add(reaction: discord.Reaction, user: discord.User):
+            await handle_reaction(reaction, user, bot, ctx)
+
+    except discord.Forbidden:
+        return await show_permission_error(ctx)
+    except Exception as e:
+        return await show_common_error(ctx, bot, e)
 # DEPRECATED #################################################
 
 # # respond a help msg when the bot joins a server
