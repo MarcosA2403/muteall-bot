@@ -76,7 +76,7 @@ async def on_ready():
 
     bot.add_view(MuteAllPanel())
 
-    channel_id = 1493790351914438747
+    channel_id = 1495931349809496254
     channel = bot.get_channel(channel_id)
 
     if channel:
