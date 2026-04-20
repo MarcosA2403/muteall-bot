@@ -81,12 +81,12 @@ async def on_ready():
 
     if channel:
         async for msg in channel.history(limit=20):
-            if msg.author == bot.user and "🎪Control del Circo🃏" in msg.content:
+            if msg.author == bot.user and "🎪 Control del Circo 🃏" in msg.content:
                 await msg.edit(view=MuteAllPanel())
                 return
 
         await channel.send(
-            "🎪Control del Circo🃏",
+            "🎪 Control del Circo 🃏",
             view=MuteAllPanel()
         )
 
