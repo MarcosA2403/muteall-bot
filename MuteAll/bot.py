@@ -2,51 +2,47 @@ import discord
 import os
 import asyncio
 
+from MuteAll.core import do_all, do_unall
+from MuteAll.events import handle_ready
+
+bot = discord.AutoShardedBot()
+
+# =========================
+# AUDIO
+# =========================
 async def play_sound(interaction, file_path):
     if not interaction.user.voice:
         return
 
     channel = interaction.user.voice.channel
-
     vc = interaction.guild.voice_client
 
-    # 🔥 SI YA ESTÁ CONECTADO
     if vc:
         if vc.channel != channel:
             await vc.move_to(channel)
     else:
         vc = await channel.connect()
 
-    # 🔥 detener audio anterior si existe
     if vc.is_playing():
         vc.stop()
 
     vc.play(discord.FFmpegPCMAudio(file_path))
 
     while vc.is_playing():
-        await asyncio.sleep(1)
+        await asyncio.sleep(0.5)
 
     await vc.disconnect()
 
-from MuteAll.core import (
-    do_mute, do_unmute, do_deafen, do_undeafen,
-    do_all, do_unall, add_reactions
-)
-from MuteAll.errors import show_common_error, show_permission_error
-from MuteAll.events import handle_ready, handle_reaction
-from MuteAll.utils import get_help, get_stats, handle_errors
-from MuteAll.emojis import get_emojis
-
-bot = discord.AutoShardedBot()
 
 # =========================
-# PANEL DE CONTROL FINAL
+# PANEL
 # =========================
 class MuteAllPanel(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
+        self.enabled = True
 
-    def is_admin(self, interaction: discord.Interaction):
+    def is_admin(self, interaction):
         return interaction.user.guild_permissions.administrator
 
     @discord.ui.button(
@@ -62,58 +58,48 @@ class MuteAllPanel(discord.ui.View):
                 ephemeral=True
             )
 
-        await interaction.response.defer()  # 🔥 importante
+        await interaction.response.defer()
 
         ctx = await bot.get_application_context(interaction)
 
-        # 🔇 MUTEAR
-        if "Shut Up" in button.label:
+        if self.enabled:
             await play_sound(interaction, "sounds/shutup.mp3")
-
             await do_all(ctx, "")
 
+            self.enabled = False
             button.label = "🔊 Speak"
             button.style = discord.ButtonStyle.green
 
-        # 🔊 DESMUTEAR
         else:
             await play_sound(interaction, "sounds/speak.mp3")
-
             await do_unall(ctx, "")
 
+            self.enabled = True
             button.label = "🔇 Shut Up"
             button.style = discord.ButtonStyle.red
 
         await interaction.edit_original_response(view=self)
 
+
 # =========================
 # BOT START
 # =========================
-def run():
-    bot.run(os.getenv("DISCORD_TOKEN"), reconnect=True)
-
-
 @bot.event
 async def on_ready():
     await handle_ready(bot)
-
-    # registrar botones persistentes
     bot.add_view(MuteAllPanel())
 
-    channel_id = 1493790351914438747
-    channel = bot.get_channel(channel_id)
+    channel = bot.get_channel(1493790351914438747)
 
     if channel:
-        async for msg in channel.history(limit=20):
-            if msg.author == bot.user and "Panel de control MuteAll" in msg.content:
-                await msg.edit(view=MuteAllPanel())
-                return
-
         await channel.send(
             "⚙️ Panel de control MuteAll",
             view=MuteAllPanel()
         )
 
+
+def run():
+    bot.run(os.getenv("DISCORD_TOKEN"))
 
 # =========================
 # INFO COMMANDS
