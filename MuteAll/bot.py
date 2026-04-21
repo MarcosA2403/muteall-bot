@@ -94,7 +94,7 @@ class MuteAllPanel(discord.ui.View):
         return interaction.user.guild_permissions.administrator
 
     @discord.ui.button(
-        label="🔇 Shut Up",
+        label="<:mute:1487259209849638923> Shut Up",
         style=discord.ButtonStyle.red,
         custom_id="muteall_toggle"
     )
@@ -114,13 +114,13 @@ class MuteAllPanel(discord.ui.View):
                 await do_all(ctx, "")
                 self.enabled = False
 
-                button.label = "🔊 Speak"
+                button.label = "<:unmute:1487265179547996270> Speak"
                 button.style = discord.ButtonStyle.green
             else:
                 await do_unall(ctx, "")
                 self.enabled = True
 
-                button.label = "🔇 Shut Up"
+                button.label = "<:mute:1487259209849638923> Shut Up"
                 button.style = discord.ButtonStyle.red
 
         except Exception as e:
