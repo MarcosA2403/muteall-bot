@@ -15,6 +15,12 @@ from MuteAll.emojis import get_emojis
 
 bot = discord.AutoShardedBot()
 
+# =========================
+# VARIABLES DEMONIO
+# =========================
+AUTO_MODE = False
+MIN_USERS_TRIGGER = 3
+LAST_EVENT = "Sistema iniciado..."
 
 # =========================
 # PROTECCIÓN GLOBAL
@@ -22,7 +28,6 @@ bot = discord.AutoShardedBot()
 @bot.event
 async def on_error(event, *args, **kwargs):
     print(f"⚠️ Error en evento {event}:", sys.exc_info())
-
 
 @bot.event
 async def on_application_command_error(ctx, error):
@@ -32,11 +37,12 @@ async def on_application_command_error(ctx, error):
     except:
         pass
 
-
 # =========================
 # EMBED DASHBOARD
 # =========================
 def get_dashboard_embed(enabled: bool):
+    global LAST_EVENT
+
     if enabled:
         status = "🔴 MUTE ACTIVADO"
         bar = "██████████"
@@ -47,13 +53,13 @@ def get_dashboard_embed(enabled: bool):
         color = discord.Color.green()
 
     embed = discord.Embed(
-        title="🎮 PANEL DE CONTROL - VOZ",
+        title="👿 PANEL DEMONIO - CONTROL TOTAL",
         description="```diff\n+ Sistema en tiempo real\n```",
         color=color
     )
 
     embed.add_field(
-        name="📡 Estado del Sistema",
+        name="📡 Estado",
         value=f"```ini\n[{status}]\n```",
         inline=False
     )
@@ -65,81 +71,121 @@ def get_dashboard_embed(enabled: bool):
     )
 
     embed.add_field(
-        name="🎛️ Control",
-        value="🔇 Mute All\n🔊 Unmute All",
+        name="🚨 EVENT LOG",
+        value=f"```diff\n{LAST_EVENT}\n```",
         inline=False
     )
 
-    embed.set_footer(text="MuteAll System • Live Control Panel")
+    embed.add_field(
+        name="🎮 Modo Auto",
+        value=f"`{'ACTIVO' if AUTO_MODE else 'APAGADO'}`",
+        inline=False
+    )
+
+    embed.set_footer(text="MuteAll Demon System")
     return embed
 
-
 # =========================
-# PANEL DE CONTROL
+# PANEL
 # =========================
 class MuteAllPanel(discord.ui.View):
     def __init__(self, enabled=True):
         super().__init__(timeout=None)
         self.enabled = enabled
 
-    def is_admin(self, interaction: discord.Interaction):
+    def is_admin(self, interaction):
         return interaction.user.guild_permissions.administrator
 
-    @discord.ui.button(
-        label="🔇 Shut Up",
-        style=discord.ButtonStyle.red,
-        custom_id="muteall_toggle"
-    )
-    async def toggle(self, button: discord.ui.Button, interaction: discord.Interaction):
+    @discord.ui.button(label="🔇 Shut Up", style=discord.ButtonStyle.red, custom_id="muteall_toggle")
+    async def toggle(self, button, interaction):
+
+        global LAST_EVENT
 
         if not self.is_admin(interaction):
-            return await interaction.response.send_message(
-                "❌ Solo administradores",
-                ephemeral=True
-            )
+            return await interaction.response.send_message("❌ Solo admins", ephemeral=True)
 
         await interaction.response.defer()
-
         ctx = await bot.get_application_context(interaction)
 
         try:
             if self.enabled:
                 await do_all(ctx, "")
                 self.enabled = False
+                LAST_EVENT = "- Voz silenciada globalmente"
 
                 button.label = "🔊 Speak"
                 button.style = discord.ButtonStyle.green
-
             else:
                 await do_unall(ctx, "")
                 self.enabled = True
+                LAST_EVENT = "+ Voz restaurada"
 
                 button.label = "🔇 Shut Up"
                 button.style = discord.ButtonStyle.red
 
         except Exception as e:
-            print("🔥 Error en botón:", e)
+            print("Error:", e)
 
-        # 🔥 actualizar embed + botón
-        await interaction.message.edit(
-            embed=get_dashboard_embed(self.enabled),
-            view=self
-        )
+        await interaction.message.edit(embed=get_dashboard_embed(self.enabled), view=self)
 
+    @discord.ui.button(label="🎮 Game Mode", style=discord.ButtonStyle.blurple, custom_id="game_mode")
+    async def game_mode(self, button, interaction):
+
+        global AUTO_MODE, LAST_EVENT
+
+        if not self.is_admin(interaction):
+            return await interaction.response.send_message("❌ Solo admins", ephemeral=True)
+
+        AUTO_MODE = not AUTO_MODE
+        LAST_EVENT = f"{'+' if AUTO_MODE else '-'} AutoMode {'activado' if AUTO_MODE else 'desactivado'}"
+
+        await interaction.response.defer()
+
+        await interaction.message.edit(embed=get_dashboard_embed(self.enabled), view=self)
 
 # =========================
-# BOT START (MODO INMORTAL)
+# VOICE INTELIGENTE
+# =========================
+@bot.event
+async def on_voice_state_update(member, before, after):
+    global AUTO_MODE, LAST_EVENT
+
+    if not AUTO_MODE:
+        return
+
+    channel = after.channel or before.channel
+    if not channel:
+        return
+
+    members = channel.members
+
+    try:
+        if len(members) >= MIN_USERS_TRIGGER:
+            for m in members:
+                await m.edit(mute=True)
+
+            LAST_EVENT = f"+ AUTO-MUTE ({len(members)} users)"
+
+        else:
+            for m in members:
+                await m.edit(mute=False)
+
+            LAST_EVENT = f"- AUTO-UNMUTE ({len(members)} users)"
+
+    except:
+        pass
+
+# =========================
+# BOT START (INMORTAL)
 # =========================
 def run():
     while True:
         try:
-            print("🔥 Iniciando bot...")
+            print("🔥 Iniciando...")
             bot.run(os.getenv("DISCORD_TOKEN"), reconnect=True)
         except Exception as e:
-            print("💥 Bot crasheó:", e)
-            print("🔁 Reiniciando en 5 segundos...")
+            print("💥 Crash:", e)
             time.sleep(5)
-
 
 # =========================
 # READY
@@ -155,91 +201,35 @@ async def on_ready():
 
     if channel:
         async for msg in channel.history(limit=20):
-            if msg.author == bot.user and "CONTROL DEL CIRCO" in msg.content:
-                await msg.edit(
-                    content=None,
-                    embed=get_dashboard_embed(True),
-                    view=MuteAllPanel(True)
-                )
+            if msg.author == bot.user:
+                await msg.edit(embed=get_dashboard_embed(True), view=MuteAllPanel(True))
                 return
 
-        await channel.send(
-            embed=get_dashboard_embed(True),
-            view=MuteAllPanel(True)
-        )
-
+        await channel.send(embed=get_dashboard_embed(True), view=MuteAllPanel(True))
 
 # =========================
-# INFO COMMANDS
+# COMANDOS
 # =========================
 @bot.slash_command(name="ping")
-async def ping(ctx: discord.ApplicationContext):
+async def ping(ctx):
     await ctx.respond(f"Pong! {round(bot.latency * 1000)} ms")
 
-
 @bot.slash_command(name="help")
-async def help_command(ctx: discord.ApplicationContext):
+async def help_command(ctx):
     await ctx.respond(embed=get_help())
 
-
 @bot.slash_command(name="stats")
-async def stats(ctx: discord.ApplicationContext):
+async def stats(ctx):
     guilds, members = get_stats(bot)
-    await ctx.respond(
-        f"MuteAll is used by `{members}` users in `{guilds}` servers!"
-    )
-
-
-# =========================
-# MAIN COMMANDS
-# =========================
-@bot.slash_command(name="mute")
-async def mute(ctx: discord.ApplicationContext, mentions: discord.Option(str, "") = ""):
-    await handle_errors(ctx, do_mute, mentions)
-
-
-@bot.slash_command(name="unmute")
-async def unmute(ctx: discord.ApplicationContext, mentions: discord.Option(str, "") = ""):
-    await handle_errors(ctx, do_unmute, mentions)
-
-
-@bot.slash_command(name="deafen")
-async def deafen(ctx: discord.ApplicationContext, mentions: discord.Option(str, "") = ""):
-    await handle_errors(ctx, do_deafen, mentions)
-
-
-@bot.slash_command(name="undeafen")
-async def undeafen(ctx: discord.ApplicationContext, mentions: discord.Option(str, "") = ""):
-    await handle_errors(ctx, do_undeafen, mentions)
-
+    await ctx.respond(f"{members} usuarios en {guilds} servidores")
 
 @bot.slash_command(name="all")
-async def all_command(ctx: discord.ApplicationContext, mentions: discord.Option(str, "") = ""):
+async def all_command(ctx, mentions: discord.Option(str, "") = ""):
     await handle_errors(ctx, do_all, mentions)
 
-
 @bot.slash_command(name="unall")
-async def unall(ctx: discord.ApplicationContext, mentions: discord.Option(str, "") = ""):
+async def unall(ctx, mentions: discord.Option(str, "") = ""):
     await handle_errors(ctx, do_unall, mentions)
-
-
-# =========================
-# REACTIONS MODE
-# =========================
-@bot.slash_command(name="react")
-async def react(ctx: discord.ApplicationContext):
-    try:
-        emojis = get_emojis(bot)
-        await add_reactions(ctx, emojis)
-
-        @bot.event
-        async def on_reaction_add(reaction: discord.Reaction, user: discord.User):
-            await handle_reaction(reaction, user, bot, ctx)
-
-    except discord.Forbidden:
-        return await show_permission_error(ctx)
-    except Exception as e:
-        return await show_common_error(ctx, e)
 # DEPRECATED #################################################
 
 # # respond a help msg when the bot joins a server
