@@ -15,9 +15,6 @@ from MuteAll.emojis import get_emojis
 
 bot = discord.AutoShardedBot()
 
-# 🔥 ESTADO GLOBAL REAL (FIX PRINCIPAL)
-SYSTEM_ENABLED = True
-
 
 # =========================
 # PROTECCIÓN GLOBAL
@@ -37,9 +34,19 @@ async def on_application_command_error(ctx, error):
 
 
 # =========================
-# EMBED DASHBOARD (LIVE)
+# FUNCIÓN CONTAR USUARIOS VOZ
 # =========================
-def get_dashboard_embed(enabled: bool, members_count: int = 0):
+def count_voice_members(guild):
+    total = 0
+    for vc in guild.voice_channels:
+        total += len(vc.members)
+    return total
+
+
+# =========================
+# EMBED DASHBOARD
+# =========================
+def get_dashboard_embed(enabled: bool, members_count: int):
     if enabled:
         status = "🔴 MUTE ACTIVADO"
         color = discord.Color.red()
@@ -71,46 +78,17 @@ def get_dashboard_embed(enabled: bool, members_count: int = 0):
         inline=False
     )
 
-    embed.set_footer(text="Shut Up System • Live control Panel v4.0")
+    embed.set_footer(text="Shut Up System • Live control Panel v3.0")
     return embed
 
 
 # =========================
-# LOOP LIVE (YA NO RESETEA)
-# =========================
-async def update_dashboard_loop(channel_id):
-    await bot.wait_until_ready()
-
-    while not bot.is_closed():
-        try:
-            channel = bot.get_channel(channel_id)
-
-            if channel:
-                async for msg in channel.history(limit=10):
-                    if msg.author == bot.user:
-
-                        members_count = 0
-                        for vc in msg.guild.voice_channels:
-                            members_count += len(vc.members)
-
-                        await msg.edit(
-                            embed=get_dashboard_embed(SYSTEM_ENABLED, members_count),
-                            view=MuteAllPanel()
-                        )
-                        break
-
-        except Exception as e:
-            print("💥 Error en loop live:", e)
-
-        await asyncio.sleep(5)
-
-
-# =========================
-# PANEL DE CONTROL (FIX REAL)
+# PANEL DE CONTROL
 # =========================
 class MuteAllPanel(discord.ui.View):
-    def __init__(self):
+    def __init__(self, enabled=True):
         super().__init__(timeout=None)
+        self.enabled = enabled
 
     def is_admin(self, interaction: discord.Interaction):
         return interaction.user.guild_permissions.administrator
@@ -122,8 +100,6 @@ class MuteAllPanel(discord.ui.View):
     )
     async def toggle(self, button: discord.ui.Button, interaction: discord.Interaction):
 
-        global SYSTEM_ENABLED
-
         if not self.is_admin(interaction):
             return await interaction.response.send_message(
                 "❌ Solo administradores",
@@ -134,16 +110,15 @@ class MuteAllPanel(discord.ui.View):
         ctx = await bot.get_application_context(interaction)
 
         try:
-            if SYSTEM_ENABLED:
+            if self.enabled:
                 await do_all(ctx, "")
-                SYSTEM_ENABLED = False
+                self.enabled = False
 
                 button.label = "🔊 Speak"
                 button.style = discord.ButtonStyle.green
-
             else:
                 await do_unall(ctx, "")
-                SYSTEM_ENABLED = True
+                self.enabled = True
 
                 button.label = "🔇 Shut Up"
                 button.style = discord.ButtonStyle.red
@@ -151,15 +126,16 @@ class MuteAllPanel(discord.ui.View):
         except Exception as e:
             print("🔥 Error en botón:", e)
 
-        # 🔥 actualizar UI sin romper estado
+        members_count = count_voice_members(interaction.guild)
+
         await interaction.message.edit(
-            embed=get_dashboard_embed(SYSTEM_ENABLED, 0),
+            embed=get_dashboard_embed(self.enabled, members_count),
             view=self
         )
 
 
 # =========================
-# BOT START (INMORTAL)
+# BOT START (MODO INMORTAL)
 # =========================
 def run():
     while True:
@@ -177,8 +153,6 @@ def run():
 # =========================
 @bot.event
 async def on_ready():
-    global SYSTEM_ENABLED
-
     await handle_ready(bot)
 
     bot.add_view(MuteAllPanel())
@@ -187,36 +161,24 @@ async def on_ready():
     channel = bot.get_channel(channel_id)
 
     if channel:
-        found = False
-
         async for msg in channel.history(limit=20):
             if msg.author == bot.user:
 
-                # 🔥 detectar estado REAL basado en usuarios
-                members_muted = True
-                for vc in msg.guild.voice_channels:
-                    for member in vc.members:
-                        if not member.voice.mute:
-                            members_muted = False
-                            break
-
-                SYSTEM_ENABLED = members_muted
+                members_count = count_voice_members(msg.guild)
 
                 await msg.edit(
                     content=None,
-                    embed=get_dashboard_embed(SYSTEM_ENABLED, 0),
-                    view=MuteAllPanel()
+                    embed=get_dashboard_embed(True, members_count),
+                    view=MuteAllPanel(True)
                 )
-                found = True
-                break
+                return
 
-        if not found:
-            await channel.send(
-                embed=get_dashboard_embed(True, 0),
-                view=MuteAllPanel()
-            )
+        members_count = count_voice_members(channel.guild)
 
-    bot.loop.create_task(update_dashboard_loop(channel_id))
+        await channel.send(
+            embed=get_dashboard_embed(True, members_count),
+            view=MuteAllPanel(True)
+        )
 
 
 # =========================
