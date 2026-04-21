@@ -48,11 +48,11 @@ def count_voice_members(guild):
 # =========================
 def get_dashboard_embed(enabled: bool, members_count: int):
     if enabled:
+        status = "🟢 MUTE DESACTIVADO"
+        color = discord.Color.green()
+    else:
         status = "🔴 MUTE ACTIVADO"
         color = discord.Color.red()
-    else:
-        status = "🟢 VOZ ACTIVADA"
-        color = discord.Color.green()
 
     embed = discord.Embed(
         title="🎪 Control del Circo 🃏",
