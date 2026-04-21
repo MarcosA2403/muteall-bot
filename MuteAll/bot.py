@@ -67,13 +67,13 @@ def get_dashboard_embed(enabled: bool, members_count: int):
     )
 
     embed.add_field(
-        name="👥 Voz",
-        value=f"`{members_count}` usuarios",
+        name="👥 Usuarios conectados",
+        value=f"`{members_count}` users",
         inline=True
     )
 
     embed.add_field(
-        name="🎛️ Control",
+        name="🎛️ Control de Voz",
         value="🔇 / 🔊",
         inline=False
     )
