@@ -60,56 +60,25 @@ def get_dashboard_embed(enabled: bool, members_count: int):
         color=color
     )
 
-    # 🔥 BORDE SUPERIOR (simulación)
     embed.add_field(
-        name="━━━━━━━━━━━━━━━━━━━━━━━",
-        value="‎",
-        inline=False
-    )
-
-    # 🔥 ESTADO
-    embed.add_field(
-        name="📡 Estado del Sistema",
+        name="📡 Estado",
         value=f"```ini\n[{status}]\n```",
-        inline=False
+        inline=True
     )
 
-    # 🔥 SEPARADOR
     embed.add_field(
-        name="━━━━━━━━━━━━━━━━━━━━━━━",
-        value="‎",
-        inline=False
+        name="👥 Voz",
+        value=f"`{members_count}` usuarios",
+        inline=True
     )
 
-    # 🔥 USUARIOS
-    embed.add_field(
-        name="👥 Usuarios en voz",
-        value=f"`{members_count} conectados`",
-        inline=False
-    )
-
-    # 🔥 SEPARADOR
-    embed.add_field(
-        name="━━━━━━━━━━━━━━━━━━━━━━━",
-        value="‎",
-        inline=False
-    )
-
-    # 🔥 CONTROLES
     embed.add_field(
         name="🎛️ Control",
-        value="🔇 Mute All\n🔊 Unmute All",
+        value="🔇 / 🔊",
         inline=False
     )
 
-    # 🔥 BORDE INFERIOR
-    embed.add_field(
-        name="━━━━━━━━━━━━━━━━━━━━━━━",
-        value="‎",
-        inline=False
-    )
-
-    embed.set_footer(text="Shut Up System • Live control Panel v3.2")
+    embed.set_footer(text="Shut Up System • v3.2")
     return embed
 
 
