@@ -95,7 +95,7 @@ class MuteAllPanel(discord.ui.View):
 
     @discord.ui.button(
         label="Shut Up",
-        emoji="🔇",  # 👈 evita errores, luego te explico cómo poner los custom
+        emoji=discord.PartialEmoji(name="mute", id=1487259209849638923)
         style=discord.ButtonStyle.red,
         custom_id="muteall_toggle"
     )
@@ -116,7 +116,7 @@ class MuteAllPanel(discord.ui.View):
                 self.enabled = False
 
                 button.label = "Speak"
-                button.emoji = "🔊"
+                button.emoji = discord.PartialEmoji(name="unmute", id=1487265179547996270)
                 button.style = discord.ButtonStyle.green
 
             else:
@@ -124,7 +124,7 @@ class MuteAllPanel(discord.ui.View):
                 self.enabled = True
 
                 button.label = "Shut Up"
-                button.emoji = "🔇"
+                button.emoji = discord.PartialEmoji(name="mute", id=1487259209849638923)
                 button.style = discord.ButtonStyle.red
 
         except Exception as e:
