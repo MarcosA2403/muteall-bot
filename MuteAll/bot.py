@@ -94,11 +94,11 @@ class MuteAllPanel(discord.ui.View):
         return interaction.user.guild_permissions.administrator
 
     @discord.ui.button(
-    label="Shut Up",
-    emoji=discord.PartialEmoji(name="mute", id=1487259209849638923),
-    style=discord.ButtonStyle.red,
-    custom_id="muteall_toggle"
-)
+        label="Shut Up",
+        emoji=discord.PartialEmoji(name="mute", id=1487259209849638923),
+        style=discord.ButtonStyle.red,
+        custom_id="muteall_toggle"
+    )
     async def toggle(self, button: discord.ui.Button, interaction: discord.Interaction):
 
         if not self.is_admin(interaction):
@@ -112,20 +112,20 @@ class MuteAllPanel(discord.ui.View):
 
         try:
             if self.enabled:
-    await do_all(ctx, "")
-    self.enabled = False
+                await do_all(ctx, "")
+                self.enabled = False
 
-    button.label = "Speak"
-    button.emoji = discord.PartialEmoji(name="unmute", id=1487265179547996270)
-    button.style = discord.ButtonStyle.green
+                button.label = "Speak"
+                button.emoji = discord.PartialEmoji(name="unmute", id=1487265179547996270)
+                button.style = discord.ButtonStyle.green
 
-else:
-    await do_unall(ctx, "")
-    self.enabled = True
+            else:
+                await do_unall(ctx, "")
+                self.enabled = True
 
-    button.label = "Shut Up"
-    button.emoji = discord.PartialEmoji(name="mute", id=1487259209849638923)
-    button.style = discord.ButtonStyle.red
+                button.label = "Shut Up"
+                button.emoji = discord.PartialEmoji(name="mute", id=1487259209849638923)
+                button.style = discord.ButtonStyle.red
 
         except Exception as e:
             print("🔥 Error en botón:", e)
