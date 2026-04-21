@@ -15,12 +15,14 @@ from MuteAll.emojis import get_emojis
 
 bot = discord.AutoShardedBot()
 
+
 # =========================
 # PROTECCIÓN GLOBAL
 # =========================
 @bot.event
 async def on_error(event, *args, **kwargs):
     print(f"⚠️ Error en evento {event}:", sys.exc_info())
+
 
 @bot.event
 async def on_application_command_error(ctx, error):
@@ -29,6 +31,30 @@ async def on_application_command_error(ctx, error):
         await ctx.respond("⚠️ Ocurrió un error", ephemeral=True)
     except:
         pass
+
+
+# =========================
+# EMBED DASHBOARD
+# =========================
+def get_dashboard_embed(enabled: bool):
+    if enabled:
+        status = "🔴 MUTE ACTIVADO"
+        color = discord.Color.red()
+    else:
+        status = "🟢 VOZ ACTIVADA"
+        color = discord.Color.green()
+
+    embed = discord.Embed(
+        title="🎪 CONTROL DEL CIRCO 🃏",
+        description="Panel de control de voz en tiempo real",
+        color=color
+    )
+
+    embed.add_field(name="Estado", value=status, inline=False)
+    embed.add_field(name="Comandos", value="🔇 Mute All\n🔊 Unmute All", inline=False)
+
+    embed.set_footer(text="Sistema activo • MuteAll v2")
+    return embed
 
 
 # =========================
@@ -77,7 +103,11 @@ class MuteAllPanel(discord.ui.View):
         except Exception as e:
             print("🔥 Error en botón:", e)
 
-        await interaction.edit_original_response(view=self)
+        # 🔥 actualizar embed + botón
+        await interaction.message.edit(
+            embed=get_dashboard_embed(self.enabled),
+            view=self
+        )
 
 
 # =========================
@@ -108,13 +138,17 @@ async def on_ready():
 
     if channel:
         async for msg in channel.history(limit=20):
-            if msg.author == bot.user and "🎪 Control del Circo 🃏" in msg.content:
-                await msg.edit(view=MuteAllPanel())
+            if msg.author == bot.user and "CONTROL DEL CIRCO" in msg.content:
+                await msg.edit(
+                    content=None,
+                    embed=get_dashboard_embed(True),
+                    view=MuteAllPanel(True)
+                )
                 return
 
         await channel.send(
-            "🎪 Control del Circo 🃏",
-            view=MuteAllPanel()
+            embed=get_dashboard_embed(True),
+            view=MuteAllPanel(True)
         )
 
 
