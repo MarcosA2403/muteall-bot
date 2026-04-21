@@ -34,20 +34,18 @@ async def on_application_command_error(ctx, error):
 
 
 # =========================
-# EMBED DASHBOARD
+# EMBED DASHBOARD (LIVE)
 # =========================
-def get_dashboard_embed(enabled: bool):
+def get_dashboard_embed(enabled: bool, members_count: int = 0):
     if enabled:
         status = "🔴 MUTE ACTIVADO"
-        bar = "██████████"
         color = discord.Color.red()
     else:
         status = "🟢 VOZ ACTIVADA"
-        bar = "░░░░░░░░░░"
         color = discord.Color.green()
 
     embed = discord.Embed(
-        title="🎮 PANEL DE CONTROL - VOZ",
+        title="🎪 Control del Circo 🃏",
         description="```diff\n+ Sistema en tiempo real\n```",
         color=color
     )
@@ -59,8 +57,8 @@ def get_dashboard_embed(enabled: bool):
     )
 
     embed.add_field(
-        name="⚡ Intensidad",
-        value=f"`{bar}`",
+        name="👥 Usuarios en voz",
+        value=f"`{members_count} conectados`",
         inline=False
     )
 
@@ -70,8 +68,39 @@ def get_dashboard_embed(enabled: bool):
         inline=False
     )
 
-    embed.set_footer(text="MuteAll System • Live Control Panel")
+    embed.set_footer(text="Shut Up System • Live control Panel v3.0")
     return embed
+
+
+# =========================
+# LOOP LIVE
+# =========================
+async def update_dashboard_loop(channel_id):
+    await bot.wait_until_ready()
+
+    while not bot.is_closed():
+        try:
+            channel = bot.get_channel(channel_id)
+
+            if channel:
+                async for msg in channel.history(limit=10):
+                    if msg.author == bot.user:
+
+                        # 🔥 contar usuarios en todos los canales de voz
+                        members_count = 0
+                        for vc in msg.guild.voice_channels:
+                            members_count += len(vc.members)
+
+                        await msg.edit(
+                            embed=get_dashboard_embed(True, members_count),
+                            view=MuteAllPanel(True)
+                        )
+                        break
+
+        except Exception as e:
+            print("💥 Error en loop live:", e)
+
+        await asyncio.sleep(5)
 
 
 # =========================
@@ -120,15 +149,15 @@ class MuteAllPanel(discord.ui.View):
         except Exception as e:
             print("🔥 Error en botón:", e)
 
-        # 🔥 actualizar embed + botón
+        # 🔥 actualizar embed manual también
         await interaction.message.edit(
-            embed=get_dashboard_embed(self.enabled),
+            embed=get_dashboard_embed(self.enabled, 0),
             view=self
         )
 
 
 # =========================
-# BOT START (MODO INMORTAL)
+# BOT START (INMORTAL)
 # =========================
 def run():
     while True:
@@ -154,19 +183,26 @@ async def on_ready():
     channel = bot.get_channel(channel_id)
 
     if channel:
+        found = False
+
         async for msg in channel.history(limit=20):
-            if msg.author == bot.user and "CONTROL DEL CIRCO" in msg.content:
+            if msg.author == bot.user:
                 await msg.edit(
                     content=None,
-                    embed=get_dashboard_embed(True),
+                    embed=get_dashboard_embed(True, 0),
                     view=MuteAllPanel(True)
                 )
-                return
+                found = True
+                break
 
-        await channel.send(
-            embed=get_dashboard_embed(True),
-            view=MuteAllPanel(True)
-        )
+        if not found:
+            await channel.send(
+                embed=get_dashboard_embed(True, 0),
+                view=MuteAllPanel(True)
+            )
+
+    # 🔥 ACTIVAR MODO LIVE
+    bot.loop.create_task(update_dashboard_loop(channel_id))
 
 
 # =========================
