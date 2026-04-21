@@ -39,21 +39,38 @@ async def on_application_command_error(ctx, error):
 def get_dashboard_embed(enabled: bool):
     if enabled:
         status = "🔴 MUTE ACTIVADO"
+        bar = "██████████"
         color = discord.Color.red()
     else:
         status = "🟢 VOZ ACTIVADA"
+        bar = "░░░░░░░░░░"
         color = discord.Color.green()
 
     embed = discord.Embed(
-        title="🎪 CONTROL DEL CIRCO 🃏",
-        description="Panel de control de voz en tiempo real",
+        title="🎮 PANEL DE CONTROL - VOZ",
+        description="```diff\n+ Sistema en tiempo real\n```",
         color=color
     )
 
-    embed.add_field(name="Estado", value=status, inline=False)
-    embed.add_field(name="Comandos", value="🔇 Mute All\n🔊 Unmute All", inline=False)
+    embed.add_field(
+        name="📡 Estado del Sistema",
+        value=f"```ini\n[{status}]\n```",
+        inline=False
+    )
 
-    embed.set_footer(text="Sistema activo • MuteAll v2")
+    embed.add_field(
+        name="⚡ Intensidad",
+        value=f"`{bar}`",
+        inline=False
+    )
+
+    embed.add_field(
+        name="🎛️ Control",
+        value="🔇 Mute All\n🔊 Unmute All",
+        inline=False
+    )
+
+    embed.set_footer(text="MuteAll System • Live Control Panel")
     return embed
 
 
