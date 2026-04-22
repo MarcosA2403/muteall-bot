@@ -7,28 +7,44 @@ def get_help():
 
     embed.set_author(name="Help")
 
-    embed.add_field(name="Slash Commands",
-                    value="Press / to view all the available commands", inline=False)
-
-    embed.add_field(name="Bot not muting everyone?",
-                    value="Ask everyone to reconnect to the voice channel.", inline=False)
+    embed.add_field(
+        name="Slash Commands",
+        value="Press / to view all the available commands",
+        inline=False
+    )
 
     embed.add_field(
-        name="Need more help?", value="[Join support server](https://discord.gg/8hrhffR6aX)", inline=False)
+        name="Bot not muting everyone?",
+        value="Ask everyone to reconnect to the voice channel.",
+        inline=False
+    )
+
+    embed.add_field(
+        name="Need more help?",
+        value="[Join support server](https://discord.gg/8hrhffR6aX)",
+        inline=False
+    )
 
     return embed
 
 
-async def handle_errors(ctx, bot, function, mentions):
+# =========================
+# ERROR HANDLER (FIXED)
+# =========================
+async def handle_errors(ctx, function, mentions=""):
     try:
         await function(ctx, mentions)
 
-    except discord.Forbidden:  # the bot doesn't have the permission to do this
+    except discord.Forbidden:
         return await show_permission_error(ctx)
+
     except Exception as e:
-        return await show_common_error(ctx, bot, e)
+        return await show_common_error(ctx, e)
 
 
+# =========================
+# PERMISSION CHECKS
+# =========================
 def can_do(ctx, requiredPermissions=None):
 
     if requiredPermissions is None:
@@ -44,48 +60,55 @@ def can_do(ctx, requiredPermissions=None):
         if not ctx.author.guild_permissions.mute_members:
             return "You don't have the `Mute Members` permission"
 
-    if "defean" in requiredPermissions:
+    if "deafen" in requiredPermissions:  # FIX typo (defean → deafen)
         if not ctx.author.guild_permissions.deafen_members:
             return "You don't have the `Deafen Members` permission"
 
     return "OK"
 
 
+# =========================
+# ROLE CHECK
+# =========================
 def has_role(member, role_id):
-
-    role_ids = []
-    for role in member.roles:
-        role_ids.append(role.id)
-
-    if role_id in role_ids:
-        return True
-    return False
+    return any(role.id == role_id for role in member.roles)
 
 
+# =========================
+# GET USERS FROM MENTIONS
+# =========================
 def get_affected_users(ctx, mentions):
 
-    mentions: list = mentions.split(" ")
+    mentions_list = mentions.split(" ")
     affected_users = []
 
-    for mention in mentions:
+    for mention in mentions_list:
 
-        # check if they actually mentioned a user or role
-        if len(mention) != 22:
+        if len(mention) < 4:
             continue
 
-        if mention[2] == "&":  # 3rd element == & means they mentioned a role
-            for member in ctx.author.voice.channel.members:
+        try:
+            if mention.startswith("<@&"):  # ROLE
                 role_id = int(mention[3:-1])
-                if has_role(member, role_id):
-                    affected_users.append(member)
-        else:
-            for member in ctx.author.voice.channel.members:
-                if member.id == int(mention[3:-1]):
-                    affected_users.append(member)
+                for member in ctx.author.voice.channel.members:
+                    if has_role(member, role_id):
+                        affected_users.append(member)
+
+            elif mention.startswith("<@"):  # USER
+                user_id = int(mention[3:-1])
+                for member in ctx.author.voice.channel.members:
+                    if member.id == user_id:
+                        affected_users.append(member)
+
+        except:
+            continue
 
     return affected_users
 
 
+# =========================
+# STATS
+# =========================
 def get_stats(bot):
 
     guilds = bot.guilds
@@ -93,10 +116,9 @@ def get_stats(bot):
     no_of_members = 0
 
     for guild in guilds:
-        no_of_members = no_of_members + guild.member_count
+        no_of_members += guild.member_count
 
     return no_of_guilds, no_of_members
-
 
 # def remove_empty_items(arr: list):
 #     non_empty_arr: list = []
